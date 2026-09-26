@@ -190,3 +190,99 @@ $$
 
 High-level math → **GEMM + reductions + elementwise**.  
 Many output elements of a GEMM can be computed **in parallel** — that’s the GPU hook.
+
+---
+
+## Slide 6 — Our NumPy reference (`cpu/gpt2.py`)
+
+### On slide
+
+```python
+x = w.wte[token_ids] + w.wpe[pos]
+
+qkv = linear(x, c_attn_w, c_attn_b)
+q, k, v = np.split(qkv, 3, axis=-1)
+scores = (qh @ kh.transpose(0, 2, 1)) * scale
+attn   = softmax(scores, axis=-1)
+out    = attn @ vh
+
+h = layer_norm(x);  h = causal_self_attention(h);  x = x + h
+h = layer_norm(x);  h = gelu_new(linear(h, ...));  x = x + h
+
+x = layer_norm(x, ln_f...)
+logits = x @ w.wte.T
+```
+
+**Equation → NumPy → (future) CUDA kernels**
+
+**Image:** none — keep code legible on slide.
+
+### Speaker notes
+
+Not a fast runtime — a **correctness oracle** vs Hugging Face.
+
+$QK^T$ is literally `qh @ kh.transpose(...)`.  
+LM head is tied: `logits = x @ w.wte.T`.
+
+Live: `python cpu/run.py --prompt "..."`.
+
+---
+
+## Slide 7 — Logits, softmax, decoding
+
+### On slide
+
+```text
+hidden state → LM projection → 50,257 logits
+        ↓ softmax ↓
+   probabilities → decoding → next token
+```
+
+$$
+p_i=\frac{e^{z_i}}{\sum_j e^{z_j}}
+$$
+
+**Greedy:** $\arg\max_i z_i$  
+**Sampling:** top-k / top-p on logits  
+
+$$
+\boxed{\text{forward pass}\neq\text{decoding strategy}}
+$$
+
+**Image (Gamma):** `assets/softmax_example.png` — softmax steps ($e^z$ then divide by sum).
+
+### Speaker notes
+
+The model outputs **scores**, not words. Decoding picks the next ID.
+
+Greedy repetition on GPT-2 is **model + decoder**, not a CPU bug.
+
+---
+
+## Slide 8 — Q, K, V and why decode gets slower (no KV cache)
+
+### On slide
+
+```text
+One linear → split →  Q   K   V
+                      ↓   ↓   ↓
+              Attention uses QK^T and V
+```
+
+**Our demo today**
+
+```text
+each new token  →  forward( entire sequence again )
+                  recompute K,V for ALL past tokens
+```
+
+**KV cache (production inference)**
+
+```text
+save past K,V per layer  →  only compute K,V for the NEW token
+                           →  much faster generation
+```
+
+```text
+python cpu/run.py ... --verbose-timing   ← ms/token drifts up
+```
