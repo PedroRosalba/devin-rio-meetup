@@ -94,3 +94,99 @@ def glossary_html() -> str:
 def render_html_page(
     runs: list[dict],
     bench_dir: Path,
+    *,
+    embed_plots: bool,
+    plot_b64: dict[str, str],
+    asset_paths: dict[str, str],
+) -> str:
+    def img(tag: str, title: str) -> str:
+        if embed_plots:
+            src = f"data:image/png;base64,{plot_b64[tag]}"
+        else:
+            src = asset_paths[tag]
+        return f"""
+        <figure>
+          <img src="{src}" alt="{html.escape(title)}"/>
+          <figcaption>{html.escape(title)}</figcaption>
+        </figure>
+        """
+
+    cards = "".join(io_block(d) for d in runs)
+    uri = bench_dir.resolve().as_uri()
+
+    return f"""<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1"/>
+  <title>GPT-2 NumPy CPU — demo dashboard</title>
+  <style>
+    :root {{ --bg:#0f1419; --fg:#e7ecf3; --muted:#8b9cb3; --line:#2a3544; --card:#1a2332; }}
+    body {{ font-family: system-ui, sans-serif; margin: 0; background: var(--bg); color: var(--fg); }}
+    header {{ padding: 20px 28px; border-bottom: 1px solid var(--line); }}
+    header h1 {{ margin: 0 0 6px; font-size: 1.35rem; }}
+    header p {{ margin: 0; color: var(--muted); font-size: 0.9rem; }}
+    main {{ padding: 24px 28px 48px; max-width: 1100px; margin: 0 auto; }}
+    h2 {{ font-size: 1.1rem; margin-top: 32px; }}
+    section.plots {{ display: grid; grid-template-columns: 1fr; gap: 20px; }}
+    figure {{ background: var(--card); border: 1px solid var(--line); border-radius: 10px; padding: 12px; margin: 0; }}
+    figure img {{ width: 100%; height: auto; display: block; border-radius: 6px; }}
+    figcaption {{ color: var(--muted); font-size: 0.8rem; margin-top: 8px; }}
+    table {{ border-collapse: collapse; width: 100%; font-size: 0.875rem; }}
+    th, td {{ border-bottom: 1px solid var(--line); padding: 10px 12px; text-align: left; vertical-align: top; }}
+    th {{ color: var(--muted); }}
+    table.glossary td:first-child {{ white-space: nowrap; width: 12rem; }}
+    .runs {{ display: grid; gap: 16px; }}
+    .run-card {{ background: var(--card); border: 1px solid var(--line); border-radius: 10px; padding: 16px; }}
+    .run-card h3 {{ margin: 0 0 4px; font-size: 1rem; }}
+    .tag {{ color: var(--muted); font-size: 0.8rem; margin: 0 0 12px; }}
+    .io pre {{ background: #0b0f14; padding: 10px; border-radius: 6px; overflow-x: auto;
+               white-space: pre-wrap; word-break: break-word; font-size: 0.85rem; margin: 4px 0 12px; }}
+    .lbl {{ color: var(--muted); font-size: 0.75rem; text-transform: uppercase; letter-spacing: 0.04em; }}
+    .mini-metrics {{ margin: 0; padding-left: 18px; color: var(--muted); font-size: 0.85rem; }}
+    code {{ color: #93c5fd; }}
+  </style>
+</head>
+<body>
+  <header>
+    <h1>GPT-2 124M — NumPy CPU baseline</h1>
+    <p>In-house demo dashboard · data: <code>{html.escape(str(bench_dir))}</code></p>
+    <p>Local URL: <a href="{html.escape(uri)}/demo.html">{html.escape(uri)}/demo.html</a></p>
+  </header>
+  <main>
+    {glossary_html()}
+
+    <section id="charts">
+      <h2>Charts (matplotlib)</h2>
+      <div class="plots">
+        {img("decode_curves", "Decode latency grows as context lengthens (same run, each new token).")}
+        {img("latency_bars", "Compare prefill, mean decode, and TTFT across batch runs.")}
+        {img("prefill_vs_decode", "Prefill cost vs mean decode cost; point size scales with prompt length.")}
+        {img("throughput_memory", "End-to-end throughput vs peak RSS — resource/latency tradeoff snapshot.")}
+      </div>
+    </section>
+
+    <section id="runs">
+      <h2>Inputs &amp; outputs</h2>
+      <div class="runs">{cards}</div>
+    </section>
+  </main>
+</body>
+</html>
+"""
+
+
+def main() -> None:
+    p = argparse.ArgumentParser()
+    p.add_argument("bench_dir", type=Path, help="Directory with *.json bench files")
+    p.add_argument("--out", type=Path, default=None, help="HTML output (default BENCH/demo.html)")
+    p.add_argument("--open", action="store_true", help="Open demo.html in default browser")
+    p.add_argument(
+        "--embed",
+        action="store_true",
+        help="Embed PNGs as base64 in HTML (single file, larger)",
+    )
+    args = p.parse_args()
+
+    bench = args.bench_dir
+    runs = load_runs(bench)
