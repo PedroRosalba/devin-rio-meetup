@@ -1,0 +1,6 @@
+numpy>=1.26
+torch>=2.2
+transformers>=4.40
+safetensors>=0.4
+huggingface-hub>=0.23
+matplotlib>=3.8
