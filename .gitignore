@@ -1,0 +1,11 @@
+.venv/
+SELF-NOTES.md
+third_party/cuda-oxide/
+models/
+__pycache__/
+*.pyc
+.DS_Store
+common/test_vectors/*.npy
+common/weights/*.bin
+cuda-cpp/build/
+cuda-oxide/target/
