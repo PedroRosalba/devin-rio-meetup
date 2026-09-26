@@ -1,0 +1,96 @@
+{
+  "schema_version": 2,
+  "run_label": "02_greedy_timing",
+  "model": {
+    "name": "gpt2",
+    "parameter_count": 124439808,
+    "dtype": "float32",
+    "weight_bytes": 497759232,
+    "backend": "NumPy CPU",
+    "python_version": "3.14.3",
+    "numpy_version": "2.5.3",
+    "platform": "macOS-26.5.2-arm64-arm-64bit-Mach-O"
+  },
+  "input": {
+    "prompt_chars": 54,
+    "prompt_bytes": 54,
+    "prompt_tokens": 10,
+    "generated_tokens": 12,
+    "total_sequence_tokens": 22
+  },
+  "io": {
+    "prompt_text": "The strangest thing I found inside my refrigerator was",
+    "completion_text": "The strangest thing I found inside my refrigerator was a small, white, plastic bag with a small, white",
+    "generated_suffix_text": " a small, white, plastic bag with a small, white",
+    "prompt_token_ids": [
+      464,
+      36666,
+      395,
+      1517,
+      314,
+      1043,
+      2641,
+      616,
+      30500,
+      373
+    ],
+    "generated_token_ids": [
+      257,
+      1402,
+      11,
+      2330,
+      11,
+      7309,
+      6131,
+      351,
+      257,
+      1402,
+      11,
+      2330
+    ]
+  },
+  "startup": {
+    "config_load_ms": 0.2087920147459954,
+    "weights_load_ms": 531.3355840044096,
+    "tokenizer_load_ms": 178.5234590061009,
+    "total_ms": 710.0784579815809
+  },
+  "prefill": {
+    "latency_ms": 664.0494160237722,
+    "prompt_tokens_per_sec": 15.05912023818723,
+    "ms_per_prompt_token": 66.40494160237722
+  },
+  "decode": {
+    "total_ms": 2785.62171003432,
+    "mean_ms": 232.13514250286002,
+    "p50_ms": 223.5299585008761,
+    "p90_ms": 264.43764999567065,
+    "p95_ms": 291.6094685962889,
+    "p99_ms": 316.1274601158221,
+    "min_ms": 200.15733400941826,
+    "max_ms": 322.2569579957053,
+    "stddev_ms": 32.83188888381079,
+    "tokens_per_sec": 4.307835466952961,
+    "first_token_ms": 266.53424999676645,
+    "last_token_ms": 322.2569579957053,
+    "per_token_ms": [
+      266.53424999676645,
+      231.90741700818762,
+      245.5682499858085,
+      209.86183400964364,
+      200.15733400941826,
+      233.1315409974195,
+      215.15249999356456,
+      206.64720897912048,
+      233.7519590219017,
+      214.6773750137072,
+      205.97508302307688,
+      322.2569579957053
+    ]
+  },
+  "end_to_end": {
+    "ttft_ms": 930.5836660205387,
+    "total_request_ms": 4159.749584039673,
+    "overall_tokens_per_sec": 3.478592469106552,
+    "definitions": {
+      "ttft_ms": "Time from end of startup through prefill until first decode step completes (first generated token available).",
