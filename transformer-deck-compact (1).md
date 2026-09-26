@@ -190,3 +190,99 @@ The causal mask $M$ prevents a token from looking into the future.
 ---
 
 ## Slide 5 — From Transformer math to computer operations
+
+### On slide
+
+| Transformer | Computer |
+|---|---|
+| Q/K/V + projections | Matrix multiply |
+| $QK^T$, attention × V | Matrix multiply |
+| Softmax | reductions + exp |
+| LayerNorm | reductions + elementwise |
+| Residual | elementwise add |
+| Embedding | indexed memory read |
+
+$$
+\boxed{
+\text{Transformer}
+\approx
+\text{GEMMs}
++
+\text{reductions}
++
+\text{elementwise math}
++
+\text{memory movement}
+}
+$$
+
+$$
+C_{ij}=\sum_k A_{ik}B_{kj}
+$$
+
+**Image:** small 2×2 matrix-multiply graphic.
+
+### Speaker notes
+
+This is the bridge to the hardware.
+
+A Transformer sounds complicated because we describe it with high-level mathematical concepts. But eventually the machine sees matrix multiplications, reductions, elementwise functions, and memory accesses.
+
+GEMM means general matrix multiplication. Every output element is a multiply-and-sum.
+
+That matters because those output elements can be computed in parallel.
+
+---
+
+## Slide 6 — Our NumPy reference implementation
+
+### On slide
+
+```python
+x = w.wte[token_ids] + w.wpe[pos]
+
+qkv = linear(x, c_attn_w, c_attn_b)
+q, k, v = np.split(qkv, 3, axis=-1)
+
+scores = (qh @ kh.transpose(0, 2, 1)) * scale
+attn   = softmax(scores, axis=-1)
+out    = attn @ vh
+
+h = layer_norm(x);  h = causal_self_attention(h);  x = x + h
+h = layer_norm(x);  h = gelu_new(linear(h, ...));  x = x + h   # MLP
+
+x = final_layer_norm(x)
+logits = x @ w.wte.T
+```
+
+**Equation → NumPy → CUDA**
+
+### Speaker notes
+
+This is deliberately not a fast runtime. It is our correctness reference.
+
+The important thing is that the equations are visible in the code.
+
+For example:
+
+$$
+QK^T
+$$
+
+literally becomes:
+
+```python
+qh @ kh.transpose(...)
+```
+
+and the final language-model projection is:
+
+```python
+logits = x @ w.wte.T
+```
+
+This gives us something to compare the GPU implementations against.
+
+---
+
+## Slide 7 — What does the model actually output?
