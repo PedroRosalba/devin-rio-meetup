@@ -478,3 +478,49 @@ The interesting question is not “is Rust smarter than C++?” It is:
 | 8–9 | 7 min |
 | 10 / live demo | 10–12 min |
 | **Total** | **~38–40 min** |
+
+Protect the live demo time.
+
+---
+
+# Short talk (~25 min) — when CUDA-Oxide is “one minute, not a demo”
+
+**Cut or move to speaker notes (not on slide):**
+
+- Slide 1: drop the SGD footer equation; keep “train θ / infer with frozen θ” in one line verbally.
+- Slide 2: drop the Llama / DeepSeek / Gemini table from the slide; say “124M vs hundreds of B params” in ~10 s.
+- Slides 8 + 9: **merge into one slide** — GEMM parallelism + one SIMT diagram (CUDA-Oxide image stays here).
+
+**CUDA-Oxide without a live GPU (45–90 s on Slide 10):**
+
+Say this while pointing at the third column:
+
+1. **Same weights, same ops** — we are not retraining; port `cpu/gpt2.py` line-by-line (GEMM first).
+2. **CUDA-Oxide** — Rust + NVIDIA’s `cargo oxide` toolchain; device kernels, host launches, compare logits to NumPy.
+3. **Status today** — CPU oracle + demo metrics JSON; GPU paths are the race (C++ and/or Oxide). Repo: `cuda-oxide/`, `docs/cuda-oxide-setup.md`.
+
+Do **not** live-run Oxide unless `cargo oxide doctor` already passed on that machine.
+
+**Live demo priority (if time is tight):** Acts 0–3 from `docs/demo-narrative.md` on CPU only (`make verify` → top-k → greedy → `--verbose-timing`). Slide 10 table stays “TBD” for GPU — honest and fine.
+
+**Optional appendix slide (hide in Gamma, show only if asked):** “CUDA-Oxide vs CUDA C++” — both target same kernels; Oxide = Rust DX, C++ = classic `nvcc`. Pick one for v1, second for v2.
+
+---
+
+# Repo docs (for you, not slides)
+
+- Live script: `docs/demo-narrative.md`
+- CLI → function trace: `docs/cpu-inference-walkthrough.md`
+
+---
+
+# Accuracy notes for the presenter
+
+- GPT-2 predicts **tokens**, not necessarily whole words.
+- GPT-2 uses byte-level BPE with a 50,257-token vocabulary and 1,024-token sequences.
+- GPT-2 Small has 124M parameters, 12 layers, hidden size 768, and 12 attention heads.
+- GPT-2 has a final LayerNorm before the LM head.
+- Attention softmax and output softmax are mathematically the same function but serve different purposes.
+- Avoid claiming that SGD is guaranteed to find a global/low optimum for a Transformer.
+- Avoid comparing theoretical CPU/GPU TFLOPS as if they directly predict end-to-end Transformer speed.
+- Treat modern-model numbers as **scale references**, not apples-to-apples quality comparisons.
