@@ -1,0 +1,30 @@
+{
+  "name": "devin-meetup-rio (CUDA-Oxide)",
+  "build": {
+    "dockerfile": "Dockerfile",
+    "context": ".."
+  },
+  "features": {
+    "ghcr.io/devcontainers/features/rust:1": {
+      "version": "nightly-2026-08-28",
+      "profile": "minimal",
+      "components": "rust-src,rustc-dev,rust-analyzer,rustfmt,clippy,llvm-tools"
+    }
+  },
+  "remoteUser": "root",
+  "runArgs": ["--gpus=all"],
+  "containerEnv": {
+    "CUDA_HOME": "/usr/local/cuda",
+    "CUDA_PATH": "/usr/local/cuda",
+    "CUDA_TOOLKIT_PATH": "/usr/local/cuda",
+    "CUDA_OXIDE_LLC": "/usr/bin/llc-21",
+    "LIBCLANG_PATH": "/usr/lib/llvm-21/lib",
+    "LLVM_CONFIG_PATH": "/usr/bin/llvm-config-21"
+  },
+  "postCreateCommand": "bash scripts/cuda_oxide_verify.sh",
+  "customizations": {
+    "vscode": {
+      "extensions": ["rust-lang.rust-analyzer", "tamasfe.even-better-toml"]
+    }
+  }
+}
