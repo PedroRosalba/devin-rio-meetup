@@ -21,7 +21,6 @@ PHASES: list[tuple[str, list[str]]] = [
             ".gitignore",
             "Makefile",
             "README.md",
-            "transformer_runtime_demo_build_brief.md",
         ],
     ),
     ("common", ["common/weight_layout.md", "common/fixtures.py"]),
@@ -150,10 +149,7 @@ PHASES: list[tuple[str, list[str]]] = [
     (
         "deck",
         [
-            "transformer-deck-compact (1).md",
-            "What-is-a-machine-learning-model.pdf",
             "What-is-a-machine-learning-model.pptx",
-            "What-is-a-machine-learning-model_with_cover.pptx",
             "IMG_5356.jpg",
         ],
     ),

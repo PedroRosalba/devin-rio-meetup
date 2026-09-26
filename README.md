@@ -60,7 +60,7 @@ make demo-plot    # same graphs + terminal summary table
 | [`common/weight_layout.md`](common/weight_layout.md) | Checkpoint shapes, Conv1D `[in, out]` (GPU porting) |
 | [`docs/gpu-setup.md`](docs/gpu-setup.md) | Renting a GPU box, driver/CUDA checklist |
 | [`docs/3-day-plan.md`](docs/3-day-plan.md) | Milestones; slide mapping equation → function → kernel |
-| [`transformer_runtime_demo_build_brief.md`](transformer_runtime_demo_build_brief.md) | Full project brief |
+| [`What-is-a-machine-learning-model.pptx`](What-is-a-machine-learning-model.pptx) | Meetup deck (PowerPoint) |
 
 Optional cloud runner (Python only; see `modal/README.md` for CUDA C++/Rust):
 
@@ -70,7 +70,7 @@ python3 -m modal setup
 modal run modal/get_started.py
 ```
 
-Full milestone list: `transformer_runtime_demo_build_brief.md`.
+Full milestone list: `docs/3-day-plan.md`.
 
 ## Free disk space (keep the repo, drop env artifacts)
 
