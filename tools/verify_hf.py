@@ -94,3 +94,66 @@ def verify_prompt(
                 ok = False
                 print(f"hidden_states[{i}]: FAIL — {e}")
         ln_f_np = layer_norm(
+            np_hiddens[n_layer], weights.ln_f_w, weights.ln_f_b, cfg.layer_norm_epsilon
+        )
+        try:
+            _assert_close(f"hidden_states[{n_layer}] (ln_f)", hf_hiddens[n_layer], ln_f_np, HIDDEN_ATOL, HIDDEN_RTOL)
+        except AssertionError as e:
+            ok = False
+            print(f"hidden_states[{n_layer}]: FAIL — {e}")
+        if ok:
+            print(f"hidden_states[0..{n_layer}] (incl. ln_f): OK")
+
+    # Greedy decode parity (prefill + N steps), full re-forward each step like our reference.
+    def greedy_np(n_steps: int) -> list[int]:
+        cur = list(ids)
+        for _ in range(n_steps):
+            logits = forward(np.array(cur, dtype=np.int64), cfg, weights)
+            cur.append(int(np.argmax(logits[-1])))
+        return cur
+
+    def greedy_hf(n_steps: int) -> list[int]:
+        cur = list(ids)
+        for _ in range(n_steps):
+            logits, _ = hf_forward(hf_model, cur)
+            cur.append(int(np.argmax(logits[-1])))
+        return cur
+
+    for steps in (1, 5, 10):
+        g_np = greedy_np(steps)
+        g_hf = greedy_hf(steps)
+        if g_np != g_hf:
+            ok = False
+            print(f"greedy+{steps}: FAIL — np {g_np[len(ids):]} vs hf {g_hf[len(ids):]}")
+        else:
+            print(f"greedy+{steps}: OK — suffix {g_np[len(ids):]}")
+
+    if not ok and strict:
+        raise SystemExit(1)
+    return ok
+
+
+def main() -> None:
+    root = Path(__file__).resolve().parents[1]
+    default_model = root / "models" / "gpt2"
+    p = argparse.ArgumentParser(description="Verify NumPy GPT-2 vs Hugging Face")
+    p.add_argument("--model-dir", type=Path, default=Path(os.environ.get("MODEL_DIR", default_model)))
+    p.add_argument("--strict", action="store_true", help="Exit 1 on any mismatch")
+    p.add_argument("--prompt", type=str, default=None, help="Single prompt; default runs fixtures")
+    args = p.parse_args()
+
+    prompts = [args.prompt] if args.prompt else [HELLO_PROMPT, REFRIGERATOR_PROMPT]
+    all_ok = True
+    for prompt in prompts:
+        if not verify_prompt(args.model_dir, prompt, strict=False):
+            all_ok = False
+    if not all_ok:
+        print("\nSome checks failed.")
+        if args.strict:
+            raise SystemExit(1)
+    else:
+        print("\nAll checks passed.")
+
+
+if __name__ == "__main__":
+    main()
