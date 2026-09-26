@@ -94,3 +94,99 @@ This is why GPT-2 is useful for an educational GPU implementation: we can actual
 
 **Image:** optional small model-scale visual / parameter-count bars.
 
+---
+
+## Slide 3 — Text → tokens → vectors
+
+### On slide
+
+```text
+"The refrigerator..."
+        ↓
+ tokenizer
+        ↓
+[ token IDs ]
+        ↓
+embedding lookup
+        ↓
+X ∈ ℝ^(T × 768)
+```
+
+$$
+x_i = W_{te}[t_i] + W_{pe}[i]
+$$
+
+- $W_{te}$: token embeddings
+- $W_{pe}$: position embeddings
+
+**Image:** token journey graphic.
+
+### Speaker notes
+
+The tokenizer defines a fixed mapping from text to token IDs. GPT-2 uses byte-level BPE; the model does not learn which ID means “The.”
+
+What training learns is the vector stored in each embedding row.
+
+For a sequence of $T$ tokens, we get a $T\times768$ matrix. That matrix is the input to the first Transformer block.
+
+---
+
+## Slide 4 — What does a Transformer block actually do?
+
+### On slide
+
+### 1. Attention — **mix information across tokens**
+
+$$
+\operatorname{Attention}(Q,K,V)
+=
+\operatorname{softmax}
+\left(
+\frac{QK^T}{\sqrt{d_h}}+M
+\right)V
+$$
+
+```text
+token i
+   │
+   ├── looks at other tokens
+   ↓
+contextualized token i
+```
+
+### 2. MLP — **transform each token independently**
+
+```text
+token vector
+    ↓
+ expand 768 → 3072
+    ↓
+   GELU
+    ↓
+ compress 3072 → 768
+```
+
+### Speaker notes
+
+This is the intuition I want people to leave with:
+
+**Attention moves information between positions.**  
+A token can look at earlier tokens and decide which information is useful.
+
+**The MLP processes the resulting representation inside each position.**  
+It does not mix tokens together.
+
+A useful mental model is:
+
+> Attention = communication between tokens.  
+> MLP = computation performed on each token.
+
+The 12 heads give the model multiple learned attention patterns in parallel. Each head operates on 64 dimensions.
+
+The causal mask $M$ prevents a token from looking into the future.
+
+**Image:** Figure 2 from *Attention Is All You Need* + GELU graphic.
+
+---
+
+## Slide 5 — From Transformer math to computer operations
