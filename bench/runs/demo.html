@@ -94,3 +94,58 @@
         <li>mean decode: 318.9 ms/tok</li>
         <li>TTFT: 752.4 ms</li>
         <li>tok/s: 2.59</li>
+      </ul>
+    </article>
+    
+    <article class="run-card">
+      <h3>02_greedy_timing</h3>
+      <p class="tag">greedy</p>
+      <div class="io">
+        <div><span class="lbl">Prompt</span><pre>The strangest thing I found inside my refrigerator was</pre></div>
+        <div><span class="lbl">Completion</span><pre>The strangest thing I found inside my refrigerator was a small, white, plastic bag with a small, white</pre></div>
+        <div><span class="lbl">Generated suffix</span><pre> a small, white, plastic bag with a small, white</pre></div>
+      </div>
+      <ul class="mini-metrics">
+        <li>prefill: 664.0 ms</li>
+        <li>mean decode: 232.1 ms/tok</li>
+        <li>TTFT: 930.6 ms</li>
+        <li>tok/s: 3.48</li>
+      </ul>
+    </article>
+    
+    <article class="run-card">
+      <h3>03_sample_topp</h3>
+      <p class="tag">T=0.85 top_p=0.92 top_k=50 seed=42</p>
+      <div class="io">
+        <div><span class="lbl">Prompt</span><pre>The strangest thing I found inside my refrigerator was</pre></div>
+        <div><span class="lbl">Completion</span><pre>The strangest thing I found inside my refrigerator was the box that contained a jar of dried out liquid. There was no way to</pre></div>
+        <div><span class="lbl">Generated suffix</span><pre> the box that contained a jar of dried out liquid. There was no way to</pre></div>
+      </div>
+      <ul class="mini-metrics">
+        <li>prefill: 511.9 ms</li>
+        <li>mean decode: 232.6 ms/tok</li>
+        <li>TTFT: 804.4 ms</li>
+        <li>tok/s: 3.78</li>
+      </ul>
+    </article>
+    
+    <article class="run-card">
+      <h3>04_sample_rep_penalty</h3>
+      <p class="tag">T=0.8 top_p=0.9 top_k=0 seed=7</p>
+      <div class="io">
+        <div><span class="lbl">Prompt</span><pre>The strangest thing I found inside my refrigerator was</pre></div>
+        <div><span class="lbl">Completion</span><pre>The strangest thing I found inside my refrigerator was my refrigerator refrigerator was my refrigerator was my refrigerator was my refrigerator</pre></div>
+        <div><span class="lbl">Generated suffix</span><pre> my refrigerator refrigerator was my refrigerator was my refrigerator was my refrigerator</pre></div>
+      </div>
+      <ul class="mini-metrics">
+        <li>prefill: 692.0 ms</li>
+        <li>mean decode: 244.6 ms/tok</li>
+        <li>TTFT: 1036.5 ms</li>
+        <li>tok/s: 3.31</li>
+      </ul>
+    </article>
+    </div>
+    </section>
+  </main>
+</body>
+</html>
