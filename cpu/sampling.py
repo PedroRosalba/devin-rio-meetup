@@ -94,3 +94,53 @@ def apply_top_p(logits: np.ndarray, top_p: float) -> np.ndarray:
     sorted_logits = out[sorted_idx]
     probs = softmax(sorted_logits)
     cum = np.cumsum(probs)
+    remove = cum > top_p
+    if len(remove) > 1:
+        remove[1:] = remove[:-1]
+    remove[0] = False
+    out[sorted_idx[remove]] = NEG_INF
+    return out
+
+
+def prepare_logits_for_sampling(
+    logits: np.ndarray,
+    context_ids: list[int],
+    cfg: SamplingConfig,
+) -> np.ndarray:
+    """Return processed logits for the last position (1D vocab vector)."""
+    cfg.validate()
+    last = np.asarray(logits[-1], dtype=np.float64)
+    if cfg.is_greedy:
+        return last
+    last = apply_repetition_penalty(last, context_ids, cfg.repetition_penalty)
+    last = apply_temperature(last, cfg.temperature)
+    last = apply_top_k(last, cfg.top_k)
+    last = apply_top_p(last, cfg.top_p)
+    return last
+
+
+def greedy_token_id(logits_last: np.ndarray) -> int:
+    return int(np.argmax(logits_last))
+
+
+def sample_token_id(logits_last: np.ndarray, rng: np.random.Generator) -> int:
+    finite = np.isfinite(logits_last)
+    if not np.any(finite):
+        return int(np.argmax(logits_last))
+    probs = softmax(logits_last)
+    probs = probs / probs.sum()
+    return int(rng.choice(logits_last.shape[0], p=probs))
+
+
+def choose_next_token(
+    logits: np.ndarray,
+    context_ids: list[int],
+    cfg: SamplingConfig,
+    rng: np.random.Generator | None,
+) -> int:
+    processed = prepare_logits_for_sampling(logits, context_ids, cfg)
+    if cfg.is_greedy:
+        return greedy_token_id(processed)
+    if rng is None:
+        raise ValueError("RNG required for stochastic sampling (temperature > 0)")
+    return sample_token_id(processed, rng)
