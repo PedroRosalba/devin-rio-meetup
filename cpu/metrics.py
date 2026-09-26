@@ -190,3 +190,99 @@ class RunMetrics:
         generated_suffix = self.generated_token_ids
         return {
             "schema_version": 2,
+            "run_label": self.run_label,
+            "model": {
+                "name": self.model_name,
+                "parameter_count": self.parameter_count,
+                "dtype": self.dtype,
+                "weight_bytes": self.weight_bytes,
+                "backend": self.backend,
+                "python_version": self.python_version,
+                "numpy_version": self.numpy_version,
+                "platform": self.platform,
+            },
+            "input": {
+                "prompt_chars": self.prompt_chars,
+                "prompt_bytes": self.prompt_bytes,
+                "prompt_tokens": self.prompt_tokens,
+                "generated_tokens": self.generated_tokens,
+                "total_sequence_tokens": self.total_sequence_tokens,
+            },
+            "io": {
+                "prompt_text": self.prompt_text,
+                "completion_text": self.completion_text,
+                "generated_suffix_text": (
+                    self.completion_text[len(self.prompt_text) :]
+                    if self.prompt_text and self.completion_text.startswith(self.prompt_text)
+                    else ""
+                ),
+                "prompt_token_ids": list(self.prompt_token_ids),
+                "generated_token_ids": list(generated_suffix),
+            },
+            "startup": {
+                "config_load_ms": self.config_load_ms,
+                "weights_load_ms": self.weights_load_ms,
+                "tokenizer_load_ms": self.tokenizer_load_ms,
+                "total_ms": self.startup_total_ms,
+            },
+            "prefill": {
+                "latency_ms": self.prefill_ms,
+                "prompt_tokens_per_sec": prompt_tps,
+                "ms_per_prompt_token": ms_per_prompt_token,
+            },
+            "decode": {**decode, "per_token_ms": list(self.decode_per_token_ms)},
+            "end_to_end": {
+                "ttft_ms": self.ttft_ms,
+                "total_request_ms": self.total_request_ms,
+                "overall_tokens_per_sec": overall_tps,
+                "definitions": self.definitions,
+            },
+            "memory": {
+                "peak_rss_bytes": self.peak_rss_bytes,
+                "note": self.memory_note,
+            },
+            "generation": {
+                "strategy": self.strategy,
+                "temperature": self.temperature,
+                "top_k": self.top_k,
+                "top_p": self.top_p,
+                "seed": self.seed,
+                "repetition_penalty": self.repetition_penalty,
+            },
+        }
+
+
+def print_report(m: RunMetrics, d: dict[str, Any]) -> None:
+    model = d["model"]
+    inp = d["input"]
+    startup = d["startup"]
+    prefill = d["prefill"]
+    decode = d["decode"]
+    e2e = d["end_to_end"]
+    mem = d["memory"]
+    gen = d["generation"]
+
+    print("\n" + "=" * 60)
+    print("BENCHMARK REPORT")
+    print("=" * 60)
+
+    print("\n[MODEL]")
+    print(f"  name              {model['name']}")
+    print(f"  parameters        {model['parameter_count']:,}")
+    print(f"  dtype             {model['dtype']}")
+    print(f"  weight_bytes      {model['weight_bytes']:,} ({model['weight_bytes'] / 1e6:.1f} MB)")
+    print(f"  backend           {model['backend']}")
+    print(f"  python            {model['python_version']}")
+    print(f"  numpy             {model['numpy_version']}")
+
+    print("\n[INPUT]")
+    print(f"  prompt_chars      {inp['prompt_chars']}")
+    print(f"  prompt_bytes      {inp['prompt_bytes']}")
+    print(f"  prompt_tokens     {inp['prompt_tokens']}")
+    print(f"  generated_tokens  {inp['generated_tokens']}")
+    print(f"  total_seq_tokens  {inp['total_sequence_tokens']}")
+
+    print("\n[STARTUP]")
+    print(f"  config_load_ms    {startup['config_load_ms']:.2f}")
+    print(f"  weights_load_ms   {startup['weights_load_ms']:.2f}")
+    print(f"  tokenizer_load_ms {startup['tokenizer_load_ms']:.2f}")
