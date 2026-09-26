@@ -1,0 +1,15 @@
+[package]
+name = "gpt2-cuda-oxide"
+version = "0.1.0"
+edition = "2021"
+description = "GPT-2 inference via CUDA-Oxide (build on Linux GPU with cargo oxide)"
+
+# CUDA-Oxide is installed per https://nvlabs.github.io/cuda-oxide/
+# Do not expect `cargo build` on macOS without oxide toolchain.
+
+[[bin]]
+name = "gpt2_cuda_oxide"
+path = "src/main.rs"
+
+[dependencies]
+# oxide = { git = "..." }  # pinned in README when on GPU host
