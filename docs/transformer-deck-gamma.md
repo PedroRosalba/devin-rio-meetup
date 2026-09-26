@@ -286,3 +286,99 @@ save past K,V per layer  →  only compute K,V for the NEW token
 ```text
 python cpu/run.py ... --verbose-timing   ← ms/token drifts up
 ```
+
+**Images (Gamma):** text-first slide. Optional inset: `assets/ChatGPT Image Sep 26, 2026, 01_30_35 AM-1.png` (Q/K/V into attention) **or** reuse `assets/attention_mlp_token_journey.png` (“where K/V matter”).
+
+### Speaker notes
+
+**K** and **V** are what past tokens **expose** to attention; **Q** is the current position **asking**.
+
+We have **no KV cache** in `cpu/run.py`: every step calls `forward` on the full growing sequence — attention cost grows like **$O(T^2)$** per layer.
+
+A **KV cache** stores past keys and values so decode doesn’t redo work for old tokens. Same math; different **systems** implementation.
+
+Live: run with `--verbose-timing` and point at rising ms/token.  
+Say: “KV cache is the usual fix — we skipped it to keep the reference obvious.”
+
+---
+
+## Slide 9 — Why a GPU?
+
+### On slide
+
+$$
+C_{ij}=\sum_k A_{ik}B_{kj}
+$$
+
+**Each $C_{ij}$ can be computed independently.**
+
+```text
+CPU: few powerful cores          GPU: many parallel units
+              ↓                              ↓
+        less parallelism              massive GEMM parallelism
+```
+
+**Image (Gamma):** `assets/ChatGPT Image Sep 26, 2026, 01_30_39 AM-3.png` — CPU vs GPU transistor budget (more ALUs on GPU).
+
+### Speaker notes
+
+Same equations; different hardware parallelism.
+
+Do **not** claim speedup from datasheet TFLOPS — **measure** our kernels when they exist.
+
+---
+
+## Slide 10 — CUDA execution model
+
+### On slide
+
+```text
+kernel → GRID → BLOCKS → WARPS (32) → THREADS
+```
+
+```text
+output matrix → tiles → one block per tile → threads fill in C_ij
+```
+
+**Memory:** registers ↔ shared ↔ global (HBM)
+
+**Image (Gamma):** `assets/ChatGPT Image Sep 26, 2026, 01_30_40 AM-4.png` — CPU ↔ PCIe/NVLink ↔ GPU, SMs, GPCs, DRAM. *(No CUDA-Oxide SIMT PNG in repo — this stands in; name-check Oxide in speaker notes.)*
+
+### Speaker notes
+
+Warps = 32 threads in lockstep; tiled GEMM reuses shared memory / L2.
+
+**CUDA-Oxide:** we plan to implement the same kernels in Rust (`cargo oxide`); this hardware picture is what those kernels target — not running Oxide live today.
+
+---
+
+## Slide 11 — Same math, three runtimes (+ live CPU)
+
+### On slide
+
+```text
+           SAME GPT-2 WEIGHTS · SAME OPS
+                       │
+        ┌──────────────┼──────────────┐
+        ↓              ↓              ↓
+     NumPy          CUDA C++      CUDA-Oxide
+   CPU (today)      GPU TBD        GPU TBD
+        ✓ live          logits ≈       Rust + cargo oxide
+```
+
+$$
+\text{logits}_{\text{NumPy}} \approx \text{logits}_{\text{GPU}}
+$$
+
+| Runtime | Prefill | Decode | Notes |
+|---|---:|---:|---|
+| NumPy CPU | **live** | **live** | oracle |
+| CUDA C++ | TBD | TBD | `cuda-cpp/` |
+| CUDA-Oxide | TBD | TBD | `cuda-oxide/` |
+
+**Image:** none — live terminal + table are the visuals.
+
+### LIVE DEMO (CPU only on stage)
+
+1. `make verify` or `python tools/verify_hf.py --strict`  
+2. `python cpu/run.py --prompt "..."` — top-k, then greedy  
