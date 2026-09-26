@@ -94,3 +94,28 @@
       271.33408302324824,
       226.44091700203717,
       229.6531670144759
+    ]
+  },
+  "end_to_end": {
+    "ttft_ms": 804.3502489745151,
+    "total_request_ms": 4800.412249955116,
+    "overall_tokens_per_sec": 3.7793107700979167,
+    "definitions": {
+      "ttft_ms": "Time from end of startup through prefill until first decode step completes (first generated token available).",
+      "total_request_ms": "startup_total_ms + prefill_ms + sum(decode per-token latencies).",
+      "overall_tokens_per_sec": "generated_tokens / (prefill_ms + decode_total_ms) * 1000, decode-only portion excludes startup."
+    }
+  },
+  "memory": {
+    "peak_rss_bytes": 1354563584,
+    "note": "peak_rss from getrusage (bytes on macOS)"
+  },
+  "generation": {
+    "strategy": "sampling",
+    "temperature": 0.85,
+    "top_k": 50,
+    "top_p": 0.92,
+    "seed": 42,
+    "repetition_penalty": 1.0
+  }
+}
