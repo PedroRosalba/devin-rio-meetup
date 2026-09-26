@@ -190,3 +190,38 @@ def main() -> None:
 
     bench = args.bench_dir
     runs = load_runs(bench)
+    if not runs:
+        print(f"No JSON in {bench}", file=sys.stderr)
+        raise SystemExit(1)
+
+    out_html = args.out or bench / "demo.html"
+    assets = bench / "assets"
+
+    plot_b64 = {
+        "decode_curves": plot_decode_curves(runs),
+        "latency_bars": plot_run_comparison_bars(runs),
+        "throughput_memory": plot_throughput_memory(runs),
+        "prefill_vs_decode": plot_prefill_vs_decode_scatter(runs),
+    }
+    asset_paths = save_pngs(runs, assets)
+
+    page = render_html_page(
+        runs,
+        bench,
+        embed_plots=args.embed,
+        plot_b64=plot_b64,
+        asset_paths=asset_paths,
+    )
+    out_html.write_text(page)
+    print(f"Wrote {out_html.resolve()}")
+    print(f"PNG assets: {(assets).resolve()}")
+
+    if args.open:
+        url = out_html.resolve().as_uri()
+        print(f"Opening {url}")
+        if not webbrowser.open(url):
+            print("Could not open browser; paste the URL above.", file=sys.stderr)
+
+
+if __name__ == "__main__":
+    main()
