@@ -94,3 +94,12 @@
     "peak_rss_bytes": 1577451520,
     "note": "peak_rss from getrusage (bytes on macOS)"
   },
+  "generation": {
+    "strategy": "greedy",
+    "temperature": 0.0,
+    "top_k": 0,
+    "top_p": 1.0,
+    "seed": null,
+    "repetition_penalty": 1.0
+  }
+}
