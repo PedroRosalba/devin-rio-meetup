@@ -190,3 +190,10 @@ flowchart TD
 ## Slide extract (don’t paste the whole doc on slides)
 
 Use **3–4 slides**; link or QR to this file for depth.
+
+1. **CLI → tensors** — `encode` → `forward` → `logits [T, V]` → `argmax` on last row → repeat.
+2. **Inside `forward`** — embed → 12× block → `ln_f` → `x @ wte.T`.
+3. **One block** — pre-norm → MHA (\(QK^\top V\)) → residual → MLP (GELU) → residual; function names from `cpu/gpt2.py`.
+4. **Systems** — 21 full forwards, no KV cache; `causal_self_attention` is \(O(T^2)\) per layer → GPU / cache motivation.
+
+Equation → function → (future) kernel mapping matches [`3-day-plan.md`](3-day-plan.md) Day 3.
