@@ -286,3 +286,99 @@ This gives us something to compare the GPU implementations against.
 ---
 
 ## Slide 7 — What does the model actually output?
+
+### On slide
+
+```text
+hidden state
+     ↓
+linear projection
+     ↓
+50,257 logits
+     ↓
+softmax
+     ↓
+50,257 probabilities
+     ↓
+decoding
+     ↓
+next token
+```
+
+$$
+p_i=\frac{e^{z_i}}{\sum_j e^{z_j}}
+$$
+
+**Greedy:** choose $\arg\max_i z_i$  
+**Top-k / top-p:** sample from a restricted distribution
+
+$$
+\boxed{\text{model inference}\neq\text{decoding strategy}}
+$$
+
+**Image:** softmax before/after graphic.
+
+### Speaker notes
+
+The model itself does not output a word. It outputs 50,257 scores.
+
+Softmax converts those scores into probabilities. Then the decoding strategy decides what token to select.
+
+This is also why our CPU demo can produce repetitive text with greedy decoding: that is a property of the model plus decoding strategy, not because the CPU changed the model.
+
+---
+
+## Slide 8 — Why a GPU?
+
+### On slide
+
+$$
+C_{ij}=\sum_k A_{ik}B_{kj}
+$$
+
+**Each output element can be computed independently.**
+
+```text
+CPU                         GPU
+few powerful cores          many parallel execution units
+      ↓                              ↓
+  limited parallelism          massive data parallelism
+```
+
+**Question:** can we execute thousands of these small pieces simultaneously?
+
+### Speaker notes
+
+The math does not change when we move from CPU to GPU.
+
+What changes is how much parallel hardware we can use.
+
+This is why matrix-heavy workloads map naturally to GPUs.
+
+Do not use theoretical TFLOPS to claim a specific speedup. We will measure our actual implementation.
+
+---
+
+## Slide 9 — CUDA execution model
+
+### On slide
+
+```text
+GPU kernel
+    ↓
+  GRID
+    ↓
+  BLOCKS
+    ↓
+  WARPS (32 threads)
+    ↓
+  THREADS
+```
+
+```text
+output matrix
+      ↓
+   tiles
+      ↓
+one block → one tile
+      ↓
