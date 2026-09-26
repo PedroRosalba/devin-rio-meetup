@@ -286,3 +286,52 @@ def print_report(m: RunMetrics, d: dict[str, Any]) -> None:
     print(f"  config_load_ms    {startup['config_load_ms']:.2f}")
     print(f"  weights_load_ms   {startup['weights_load_ms']:.2f}")
     print(f"  tokenizer_load_ms {startup['tokenizer_load_ms']:.2f}")
+    print(f"  total_ms          {startup['total_ms']:.2f}")
+
+    print("\n[PREFILL]")
+    print(f"  latency_ms        {prefill['latency_ms']:.2f}")
+    print(f"  prompt_tok/sec    {prefill['prompt_tokens_per_sec']:.2f}")
+    print(f"  ms/prompt_tok     {prefill['ms_per_prompt_token']:.2f}")
+
+    print("\n[DECODE] (per generated token)")
+    print(f"  total_ms          {decode['total_ms']:.2f}")
+    print(f"  mean_ms/token     {decode['mean_ms']:.2f}")
+    print(f"  p50_ms/token      {decode['p50_ms']:.2f}")
+    print(f"  p90_ms/token      {decode['p90_ms']:.2f}")
+    print(f"  p95_ms/token      {decode['p95_ms']:.2f}")
+    print(f"  p99_ms/token      {decode['p99_ms']:.2f}")
+    print(f"  min_ms/token      {decode['min_ms']:.2f}")
+    print(f"  max_ms/token      {decode['max_ms']:.2f}")
+    print(f"  stddev_ms/token   {decode['stddev_ms']:.2f}")
+    print(f"  decode_tok/sec    {decode['tokens_per_sec']:.2f}")
+    print(f"  first_token_ms    {decode['first_token_ms']:.2f}")
+    print(f"  last_token_ms     {decode['last_token_ms']:.2f}")
+
+    print("\n[END TO END]")
+    print(f"  TTFT_ms           {e2e['ttft_ms']:.2f}")
+    print(f"  total_request_ms  {e2e['total_request_ms']:.2f}")
+    print(f"  overall_tok/sec   {e2e['overall_tokens_per_sec']:.2f}")
+    print("  definitions:")
+    for k, v in e2e["definitions"].items():
+        print(f"    {k}: {v}")
+
+    print("\n[MEMORY]")
+    if mem["peak_rss_bytes"] is not None:
+        print(f"  peak_rss_bytes    {mem['peak_rss_bytes']:,}")
+    else:
+        print("  peak_rss_bytes    (unavailable)")
+    print(f"  note              {mem['note']}")
+
+    print("\n[GENERATION]")
+    print(f"  strategy          {gen['strategy']}")
+    print(f"  temperature       {gen['temperature']}")
+    print(f"  top_k             {gen['top_k']}")
+    print(f"  top_p             {gen['top_p']}")
+    print(f"  seed              {gen['seed']}")
+    print(f"  repetition_penalty {gen['repetition_penalty']}")
+    print("=" * 60 + "\n")
+
+
+def write_metrics_json(path: Path, payload: dict[str, Any]) -> None:
+    path.parent.mkdir(parents=True, exist_ok=True)
+    path.write_text(json.dumps(payload, indent=2) + "\n")
