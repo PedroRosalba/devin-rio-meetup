@@ -94,3 +94,48 @@ std::unique_ptr<WeightStore> WeightStore::load(const std::string& manifest_path)
   const float* base = reinterpret_cast<const float*>(raw.data() + 8);
   store->blob_.assign(base, base + (raw.size() - 8) / sizeof(float));
 
+  auto list_pos = json.find("\"tensor_list\":");
+  if (list_pos == std::string::npos) throw std::runtime_error("manifest missing tensor_list");
+  list_pos = json.find('[', list_pos);
+  if (list_pos == std::string::npos) throw std::runtime_error("bad tensor_list");
+
+  std::size_t i = list_pos + 1;
+  while (i < json.size()) {
+    auto obj = json.find('{', i);
+    if (obj == std::string::npos || obj > json.find(']', i)) break;
+    auto end = json.find('}', obj);
+    if (end == std::string::npos) break;
+    std::string block = json.substr(obj, end - obj + 1);
+    auto name_key = block.find("\"name\":");
+    if (name_key == std::string::npos) {
+      i = end + 1;
+      continue;
+    }
+    auto q0 = block.find('"', name_key + 7);
+    auto q1 = block.find('"', q0 + 1);
+    if (q0 == std::string::npos || q1 == std::string::npos) {
+      i = end + 1;
+      continue;
+    }
+    std::string name = block.substr(q0 + 1, q1 - q0 - 1);
+
+    int offset = find_int_after(block, 0, "\"offset\"");
+    int length_bytes = find_int_after(block, 0, "\"length_bytes\"");
+    if (offset >= 0 && length_bytes > 0) {
+      TensorView tv;
+      tv.name = name;
+      tv.shape = parse_shape(block);
+      tv.data = store->blob_.data() + (offset / static_cast<int>(sizeof(float)));
+      tv.numel = static_cast<std::size_t>(length_bytes / sizeof(float));
+      store->tensors_[name] = tv;
+    }
+    i = end + 1;
+  }
+
+  if (store->tensors_.find("wte") == store->tensors_.end()) {
+    throw std::runtime_error("manifest parse failed (missing wte) — re-run export_gpt2_weights.py");
+  }
+  return store;
+}
+
+}  // namespace gpt2
