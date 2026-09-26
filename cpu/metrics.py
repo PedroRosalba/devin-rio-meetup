@@ -94,3 +94,99 @@ def summarize_latencies_ms(per_token_ms: list[float]) -> dict[str, float]:
         "mean_ms": float(arr.mean()),
         "p50_ms": percentile(per_token_ms, 50),
         "p90_ms": percentile(per_token_ms, 90),
+        "p95_ms": percentile(per_token_ms, 95),
+        "p99_ms": percentile(per_token_ms, 99),
+        "min_ms": float(arr.min()),
+        "max_ms": float(arr.max()),
+        "stddev_ms": float(arr.std(ddof=0)),
+        "tokens_per_sec": (n / total * 1000.0) if total > 0 else 0.0,
+        "first_token_ms": float(arr[0]),
+        "last_token_ms": float(arr[-1]),
+    }
+
+
+def read_memory_rss_bytes() -> tuple[int | None, int | None, str]:
+    """
+    Returns (current_rss, peak_rss, notes).
+    ru_maxrss units: bytes on macOS, kilobytes on Linux.
+    """
+    try:
+        usage = resource.getrusage(resource.RUSAGE_SELF)
+    except OSError:
+        return None, None, "resource.getrusage unavailable on this platform"
+    peak = usage.ru_maxrss
+    if sys.platform == "darwin":
+        peak_bytes = int(peak)
+        note = "peak_rss from getrusage (bytes on macOS)"
+    else:
+        peak_bytes = int(peak) * 1024
+        note = "peak_rss from getrusage (ru_maxrss is KiB on Linux)"
+    # Current RSS not provided by stdlib portably; mirror peak for peak field only.
+    return None, peak_bytes, note
+
+
+@dataclass
+class RunMetrics:
+    model_name: str = "gpt2"
+    parameter_count: int = 0
+    dtype: str = "float32"
+    weight_bytes: int = 0
+    backend: str = "NumPy CPU"
+    python_version: str = field(default_factory=lambda: sys.version.split()[0])
+    numpy_version: str = field(default_factory=lambda: np.__version__)
+    platform: str = field(default_factory=platform.platform)
+
+    prompt_chars: int = 0
+    prompt_bytes: int = 0
+    prompt_tokens: int = 0
+    generated_tokens: int = 0
+    total_sequence_tokens: int = 0
+
+    config_load_ms: float = 0.0
+    weights_load_ms: float = 0.0
+    tokenizer_load_ms: float = 0.0
+    startup_total_ms: float = 0.0
+
+    prefill_ms: float = 0.0
+    decode_per_token_ms: list[float] = field(default_factory=list)
+
+    ttft_ms: float = 0.0
+    total_request_ms: float = 0.0
+
+    strategy: str = "greedy"
+    temperature: float = 0.0
+    top_k: int = 0
+    top_p: float = 1.0
+    seed: int | None = None
+    repetition_penalty: float = 1.0
+
+    memory_note: str = ""
+    peak_rss_bytes: int | None = None
+
+    run_label: str = ""
+    prompt_text: str = ""
+    completion_text: str = ""
+    prompt_token_ids: list[int] = field(default_factory=list)
+    generated_token_ids: list[int] = field(default_factory=list)
+
+    definitions: dict[str, str] = field(
+        default_factory=lambda: {
+            "ttft_ms": "Time from end of startup through prefill until first decode step completes "
+            "(first generated token available).",
+            "total_request_ms": "startup_total_ms + prefill_ms + sum(decode per-token latencies).",
+            "overall_tokens_per_sec": "generated_tokens / (prefill_ms + decode_total_ms) * 1000, "
+            "decode-only portion excludes startup.",
+        }
+    )
+
+    def to_dict(self) -> dict[str, Any]:
+        decode = summarize_latencies_ms(self.decode_per_token_ms)
+        decode_tokens = self.generated_tokens
+        infer_ms = self.prefill_ms + decode["total_ms"]
+        overall_tps = (decode_tokens / infer_ms * 1000.0) if infer_ms > 0 and decode_tokens else 0.0
+        prompt_tps = (self.prompt_tokens / self.prefill_ms * 1000.0) if self.prefill_ms > 0 else 0.0
+        ms_per_prompt_token = self.prefill_ms / self.prompt_tokens if self.prompt_tokens else 0.0
+
+        generated_suffix = self.generated_token_ids
+        return {
+            "schema_version": 2,
