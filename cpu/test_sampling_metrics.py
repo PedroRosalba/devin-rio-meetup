@@ -94,3 +94,34 @@ class TestGreedyGenerateParity(unittest.TestCase):
     def test_greedy_matches_greedy_generate(self) -> None:
         from pathlib import Path
 
+        from gpt2 import greedy_generate, load_gpt2
+
+        model_dir = Path(__file__).resolve().parents[1] / "models" / "gpt2"
+        if not (model_dir / "config.json").is_file():
+            self.skipTest("GPT-2 weights not downloaded")
+
+        cfg, weights = load_gpt2(model_dir)
+        prompt = [464, 36666, 395, 1517, 314, 1043, 2641, 616, 30500, 373]
+        steps = 10
+        ref = greedy_generate(prompt, cfg, weights, steps)
+        cfg_s = SamplingConfig(temperature=0.0)
+        ids = list(prompt)
+        for _ in range(steps):
+            import numpy as np
+
+            from gpt2 import forward
+
+            logits = forward(np.array(ids, dtype=np.int64), cfg, weights)
+            ids.append(choose_next_token(logits, ids, cfg_s, None))
+        self.assertEqual(ids, ref)
+
+
+class TestSoftmaxRenorm(unittest.TestCase):
+    def test_top_k_then_softmax_sums_to_one(self) -> None:
+        logits = apply_top_k(np.array([1.0, 4.0, 2.0, 3.0]), 2)
+        p = softmax(logits)
+        self.assertAlmostEqual(float(p.sum()), 1.0, places=5)
+
+
+if __name__ == "__main__":
+    unittest.main()
