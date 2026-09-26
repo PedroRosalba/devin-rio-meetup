@@ -1,0 +1,96 @@
+{
+  "schema_version": 2,
+  "run_label": "03_sample_topp",
+  "model": {
+    "name": "gpt2",
+    "parameter_count": 124439808,
+    "dtype": "float32",
+    "weight_bytes": 497759232,
+    "backend": "NumPy CPU",
+    "python_version": "3.14.3",
+    "numpy_version": "2.5.3",
+    "platform": "macOS-26.5.2-arm64-arm-64bit-Mach-O"
+  },
+  "input": {
+    "prompt_chars": 54,
+    "prompt_bytes": 54,
+    "prompt_tokens": 10,
+    "generated_tokens": 16,
+    "total_sequence_tokens": 26
+  },
+  "io": {
+    "prompt_text": "The strangest thing I found inside my refrigerator was",
+    "completion_text": "The strangest thing I found inside my refrigerator was the box that contained a jar of dried out liquid. There was no way to",
+    "generated_suffix_text": " the box that contained a jar of dried out liquid. There was no way to",
+    "prompt_token_ids": [
+      464,
+      36666,
+      395,
+      1517,
+      314,
+      1043,
+      2641,
+      616,
+      30500,
+      373
+    ],
+    "generated_token_ids": [
+      262,
+      3091,
+      326,
+      7763,
+      257,
+      17379,
+      286,
+      16577,
+      503,
+      8122,
+      13,
+      1318,
+      373,
+      645,
+      835,
+      284
+    ]
+  },
+  "startup": {
+    "config_load_ms": 0.1330830273218453,
+    "weights_load_ms": 430.98170901066624,
+    "tokenizer_load_ms": 135.6987500039395,
+    "total_ms": 566.8360840063542
+  },
+  "prefill": {
+    "latency_ms": 511.90691598458216,
+    "prompt_tokens_per_sec": 19.534801519073802,
+    "ms_per_prompt_token": 51.190691598458216
+  },
+  "decode": {
+    "total_ms": 3721.6692499641795,
+    "mean_ms": 232.60432812276122,
+    "p50_ms": 226.60399999585934,
+    "p90_ms": 260.4699580115266,
+    "p95_ms": 276.6113955149194,
+    "p99_ms": 289.27694549493026,
+    "min_ms": 204.39433297724463,
+    "max_ms": 292.44333298993297,
+    "stddev_ms": 21.738063557060148,
+    "tokens_per_sec": 4.299146142595556,
+    "first_token_ms": 292.44333298993297,
+    "last_token_ms": 229.6531670144759,
+    "per_token_ms": [
+      292.44333298993297,
+      227.5942499982193,
+      235.42712497874163,
+      225.9804999921471,
+      204.39433297724463,
+      218.06508299778216,
+      212.8099999972619,
+      218.64737500436604,
+      249.605832999805,
+      226.7670829896815,
+      243.02241700934246,
+      219.76370899938047,
+      219.72004199051298,
+      271.33408302324824,
+      226.44091700203717,
+      229.6531670144759
