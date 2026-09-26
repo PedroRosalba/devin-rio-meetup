@@ -286,3 +286,8 @@ def greedy_generate(
     for _ in range(max_new_tokens):
         arr = np.array(ids, dtype=np.int64)
         logits = forward(arr, cfg, w)
+        next_id = int(np.argmax(logits[-1]))
+        ids.append(next_id)
+        if len(ids) >= cfg.n_ctx:
+            break
+    return ids
