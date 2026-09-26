@@ -1,0 +1,92 @@
+
+========================================================================
+01_greedy
+========================================================================
+
+[I/O]
+  prompt:     The strangest thing I found inside my refrigerator was
+  completion: The strangest thing I found inside my refrigerator was a small, white, plastic bag with
+  suffix only: ' a small, white, plastic bag with'
+
+[GENERATION]
+  greedy
+  repetition_penalty: 1.0
+
+[METRICS]
+  prefill_ms:        538.89
+  decode_mean_ms:    318.90
+  decode_p95_ms:     473.90
+  ttft_ms:           752.35
+  overall_tok/s:     2.59
+  peak_rss:          1577451520
+  prompt_tokens:     10
+  generated_tokens:  8
+
+========================================================================
+02_greedy_timing
+========================================================================
+
+[I/O]
+  prompt:     The strangest thing I found inside my refrigerator was
+  completion: The strangest thing I found inside my refrigerator was a small, white, plastic bag with a small, white
+  suffix only: ' a small, white, plastic bag with a small, white'
+
+[GENERATION]
+  greedy
+  repetition_penalty: 1.0
+
+[METRICS]
+  prefill_ms:        664.05
+  decode_mean_ms:    232.14
+  decode_p95_ms:     291.61
+  ttft_ms:           930.58
+  overall_tok/s:     3.48
+  peak_rss:          1492353024
+  prompt_tokens:     10
+  generated_tokens:  12
+
+========================================================================
+03_sample_topp
+========================================================================
+
+[I/O]
+  prompt:     The strangest thing I found inside my refrigerator was
+  completion: The strangest thing I found inside my refrigerator was the box that contained a jar of dried out liquid. There was no way to
+  suffix only: ' the box that contained a jar of dried out liquid. There was no way to'
+
+[GENERATION]
+  sampling T=0.85 top_p=0.92 top_k=50 seed=42
+  repetition_penalty: 1.0
+
+[METRICS]
+  prefill_ms:        511.91
+  decode_mean_ms:    232.60
+  decode_p95_ms:     276.61
+  ttft_ms:           804.35
+  overall_tok/s:     3.78
+  peak_rss:          1354563584
+  prompt_tokens:     10
+  generated_tokens:  16
+
+========================================================================
+04_sample_rep_penalty
+========================================================================
+
+[I/O]
+  prompt:     The strangest thing I found inside my refrigerator was
+  completion: The strangest thing I found inside my refrigerator was my refrigerator refrigerator was my refrigerator was my refrigerator was my refrigerator
+  suffix only: ' my refrigerator refrigerator was my refrigerator was my refrigerator was my refrigerator'
+
+[GENERATION]
+  sampling T=0.8 top_p=0.9 top_k=0 seed=7
+  repetition_penalty: 1.15
+
+[METRICS]
+  prefill_ms:        691.99
+  decode_mean_ms:    244.55
+  decode_p95_ms:     297.58
+  ttft_ms:           1036.50
+  overall_tok/s:     3.31
+  peak_rss:          1356365824
+  prompt_tokens:     10
+  generated_tokens:  12
