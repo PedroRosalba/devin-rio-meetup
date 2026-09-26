@@ -382,3 +382,99 @@ output matrix
       ↓
 one block → one tile
       ↓
+threads compute pieces
+```
+
+**Memory:** registers ↔ shared memory ↔ global memory
+
+**Image:** CUDA-Oxide SIMT/thread-hierarchy diagram.
+
+### Speaker notes
+
+CUDA exposes a hierarchy of threads.
+
+A kernel launch creates a grid of blocks. Blocks contain threads. Hardware executes threads in groups of 32 called warps.
+
+For matrix multiplication, we divide the output into tiles so blocks can work on different regions in parallel.
+
+Tuned kernels also try to reuse data through fast memory rather than repeatedly reading global memory.
+
+---
+
+## Slide 10 — Same math, different execution systems
+
+### On slide
+
+```text
+                SAME GPT-2 WEIGHTS
+                       │
+             SAME MATHEMATICAL OPS
+                       │
+        ┌──────────────┼──────────────┐
+        ↓              ↓              ↓
+     NumPy          CUDA C++      CUDA-Oxide
+       CPU             GPU            GPU
+```
+
+$$
+\text{logits}_{CPU}
+\approx
+\text{logits}_{CUDA\,C++}
+\approx
+\text{logits}_{CUDA\,Rust}
+$$
+
+| Runtime | Prefill | Decode tok/s | p50 | p95 |
+|---|---:|---:|---:|---:|
+| NumPy CPU | actual | actual | actual | actual |
+| CUDA C++ | TBD | TBD | TBD | TBD |
+| CUDA-Oxide | TBD | TBD | TBD | TBD |
+
+### LIVE DEMO
+
+1. Run the same prompt.
+2. Compare logits.
+3. Generate tokens.
+4. Measure latency / throughput.
+
+### Speaker notes
+
+This is the payoff.
+
+We are not building three different models.
+
+We are implementing the same computation three ways.
+
+The correctness test is that the logits are numerically close.
+
+The performance test is prefill latency, decode throughput, and optionally p50/p95.
+
+The interesting question is not “is Rust smarter than C++?” It is:
+
+> **How does the same mathematical computation map onto different execution systems?**
+
+---
+
+# Assets
+
+- Transformer architecture diagram — Slide 1
+- `gradient_descent_example.png` — Slide 1
+- Figure 2, *Attention Is All You Need* — Slide 4
+- `gelu_example.png` — Slide 4
+- `softmax_example.png` — Slide 7
+- CUDA-Oxide SIMT hierarchy — Slide 9
+- Optional `token_journey_example.png` — Slide 3
+- Optional `heads_split_example.png` — Q&A
+
+---
+
+# Speaker-time target
+
+| Slides | Target |
+|---|---:|
+| 1–3 | 6 min |
+| 4 | 6 min |
+| 5–7 | 9 min |
+| 8–9 | 7 min |
+| 10 / live demo | 10–12 min |
+| **Total** | **~38–40 min** |
