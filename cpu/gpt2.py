@@ -190,3 +190,99 @@ def load_gpt2(model_dir: Path, *, check_layout: bool = True) -> tuple[GPT2Config
 
 
 def causal_self_attention(
+    x: np.ndarray,
+    c_attn_w: np.ndarray,
+    c_attn_b: np.ndarray,
+    c_proj_w: np.ndarray,
+    c_proj_b: np.ndarray,
+    n_head: int,
+) -> np.ndarray:
+    """
+    x: [T, C]
+    Multi-head causal self-attention (paper-style: softmax(QK^T / sqrt(d)) V).
+    """
+    t, c = x.shape
+    head_dim = c // n_head
+
+    qkv = linear(x, c_attn_w, c_attn_b)  # [T, 3C]
+    q, k, v = np.split(qkv, 3, axis=-1)
+
+    def split_heads(arr: np.ndarray) -> np.ndarray:
+        # [T, C] -> [n_head, T, head_dim]
+        return arr.reshape(t, n_head, head_dim).transpose(1, 0, 2)
+
+    qh, kh, vh = split_heads(q), split_heads(k), split_heads(v)
+    scale = 1.0 / np.sqrt(head_dim)
+    # scores [n_head, T, T]
+    scores = (qh @ kh.transpose(0, 2, 1)) * scale
+    mask = np.triu(np.ones((t, t), dtype=bool), k=1)
+    scores = np.where(mask, -1e4, scores)
+    attn = softmax(scores, axis=-1)
+    out = attn @ vh  # [n_head, T, head_dim]
+    out = out.transpose(1, 0, 2).reshape(t, c)
+    return linear(out, c_proj_w, c_proj_b)
+
+
+def transformer_block(
+    x: np.ndarray,
+    layer: int,
+    cfg: GPT2Config,
+    w: GPT2Weights,
+) -> np.ndarray:
+    # Pre-norm attention + residual
+    h = layer_norm(x, w.ln_1_w[layer], w.ln_1_b[layer], cfg.layer_norm_epsilon)
+    h = causal_self_attention(
+        h,
+        w.c_attn_w[layer],
+        w.c_attn_b[layer],
+        w.c_proj_w[layer],
+        w.c_proj_b[layer],
+        cfg.n_head,
+    )
+    x = x + h
+
+    # Pre-norm MLP + residual
+    h = layer_norm(x, w.ln_2_w[layer], w.ln_2_b[layer], cfg.layer_norm_epsilon)
+    h = linear(h, w.c_fc_w[layer], w.c_fc_b[layer])
+    h = gelu_new(h)
+    h = linear(h, w.c_proj_mlp_w[layer], w.c_proj_mlp_b[layer])
+    return x + h
+
+
+def forward_hidden_states(
+    token_ids: np.ndarray, cfg: GPT2Config, w: GPT2Weights
+) -> tuple[np.ndarray, list[np.ndarray]]:
+    """Returns (logits [T,V], hidden_states list length n_layer+1, incl. embed output)."""
+    t = token_ids.shape[0]
+    if t > cfg.n_ctx:
+        raise ValueError(f"sequence length {t} > n_ctx {cfg.n_ctx}")
+
+    pos = np.arange(t, dtype=np.int64)
+    x = w.wte[token_ids] + w.wpe[pos]
+    hidden_states: list[np.ndarray] = [x.copy()]
+
+    for i in range(cfg.n_layer):
+        x = transformer_block(x, i, cfg, w)
+        hidden_states.append(x.copy())
+
+    x = layer_norm(x, w.ln_f_w, w.ln_f_b, cfg.layer_norm_epsilon)
+    logits = x @ w.wte.T
+    return logits, hidden_states
+
+
+def forward(token_ids: np.ndarray, cfg: GPT2Config, w: GPT2Weights) -> np.ndarray:
+    """token_ids: [T] int -> logits [T, vocab] (LM head tied to wte)."""
+    logits, _ = forward_hidden_states(token_ids, cfg, w)
+    return logits
+
+
+def greedy_generate(
+    token_ids: list[int],
+    cfg: GPT2Config,
+    w: GPT2Weights,
+    max_new_tokens: int,
+) -> list[int]:
+    ids = list(token_ids)
+    for _ in range(max_new_tokens):
+        arr = np.array(ids, dtype=np.int64)
+        logits = forward(arr, cfg, w)
