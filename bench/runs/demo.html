@@ -1,0 +1,96 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1"/>
+  <title>GPT-2 NumPy CPU — demo dashboard</title>
+  <style>
+    :root { --bg:#0f1419; --fg:#e7ecf3; --muted:#8b9cb3; --line:#2a3544; --card:#1a2332; }
+    body { font-family: system-ui, sans-serif; margin: 0; background: var(--bg); color: var(--fg); }
+    header { padding: 20px 28px; border-bottom: 1px solid var(--line); }
+    header h1 { margin: 0 0 6px; font-size: 1.35rem; }
+    header p { margin: 0; color: var(--muted); font-size: 0.9rem; }
+    main { padding: 24px 28px 48px; max-width: 1100px; margin: 0 auto; }
+    h2 { font-size: 1.1rem; margin-top: 32px; }
+    section.plots { display: grid; grid-template-columns: 1fr; gap: 20px; }
+    figure { background: var(--card); border: 1px solid var(--line); border-radius: 10px; padding: 12px; margin: 0; }
+    figure img { width: 100%; height: auto; display: block; border-radius: 6px; }
+    figcaption { color: var(--muted); font-size: 0.8rem; margin-top: 8px; }
+    table { border-collapse: collapse; width: 100%; font-size: 0.875rem; }
+    th, td { border-bottom: 1px solid var(--line); padding: 10px 12px; text-align: left; vertical-align: top; }
+    th { color: var(--muted); }
+    table.glossary td:first-child { white-space: nowrap; width: 12rem; }
+    .runs { display: grid; gap: 16px; }
+    .run-card { background: var(--card); border: 1px solid var(--line); border-radius: 10px; padding: 16px; }
+    .run-card h3 { margin: 0 0 4px; font-size: 1rem; }
+    .tag { color: var(--muted); font-size: 0.8rem; margin: 0 0 12px; }
+    .io pre { background: #0b0f14; padding: 10px; border-radius: 6px; overflow-x: auto;
+               white-space: pre-wrap; word-break: break-word; font-size: 0.85rem; margin: 4px 0 12px; }
+    .lbl { color: var(--muted); font-size: 0.75rem; text-transform: uppercase; letter-spacing: 0.04em; }
+    .mini-metrics { margin: 0; padding-left: 18px; color: var(--muted); font-size: 0.85rem; }
+    code { color: #93c5fd; }
+  </style>
+</head>
+<body>
+  <header>
+    <h1>GPT-2 124M — NumPy CPU baseline</h1>
+    <p>In-house demo dashboard · data: <code>bench/runs</code></p>
+    <p>Local URL: <a href="file:///Users/pedrorosalba/Projects/devin-meetup-rio/bench/runs/demo.html">file:///Users/pedrorosalba/Projects/devin-meetup-rio/bench/runs/demo.html</a></p>
+  </header>
+  <main>
+    
+    <section id="glossary">
+      <h2>Metrics glossary</h2>
+      <table class="glossary">
+        <thead><tr><th>Metric</th><th>Meaning</th></tr></thead>
+        <tbody><tr><td><code>prefill_ms</code></td><td>One forward pass over the prompt tokens (attention over prompt length).</td></tr><tr><td><code>mean decode ms/token</code></td><td>Average time for each greedy/sample step; full sequence re-forward (no KV cache).</td></tr><tr><td><code>p95 decode ms/token</code></td><td>95th percentile of per-token decode latencies — tail behavior.</td></tr><tr><td><code>TTFT ms</code></td><td>Prefill + first decode step: time until the first new token is ready (excludes model load).</td></tr><tr><td><code>overall tok/s</code></td><td>generated_tokens ÷ (prefill + decode); excludes startup/load.</td></tr><tr><td><code>peak RSS</code></td><td>Process high-water memory (macOS: bytes from getrusage).</td></tr><tr><td><code>decode curve</code></td><td>Token index vs ms — upward drift hints at O(T²) attention cost as context grows.</td></tr></tbody>
+      </table>
+    </section>
+    
+
+    <section id="charts">
+      <h2>Charts (matplotlib)</h2>
+      <div class="plots">
+        
+        <figure>
+          <img src="assets/decode_curves.png" alt="Decode latency grows as context lengthens (same run, each new token)."/>
+          <figcaption>Decode latency grows as context lengthens (same run, each new token).</figcaption>
+        </figure>
+        
+        
+        <figure>
+          <img src="assets/latency_bars.png" alt="Compare prefill, mean decode, and TTFT across batch runs."/>
+          <figcaption>Compare prefill, mean decode, and TTFT across batch runs.</figcaption>
+        </figure>
+        
+        
+        <figure>
+          <img src="assets/prefill_vs_decode.png" alt="Prefill cost vs mean decode cost; point size scales with prompt length."/>
+          <figcaption>Prefill cost vs mean decode cost; point size scales with prompt length.</figcaption>
+        </figure>
+        
+        
+        <figure>
+          <img src="assets/throughput_memory.png" alt="End-to-end throughput vs peak RSS — resource/latency tradeoff snapshot."/>
+          <figcaption>End-to-end throughput vs peak RSS — resource/latency tradeoff snapshot.</figcaption>
+        </figure>
+        
+      </div>
+    </section>
+
+    <section id="runs">
+      <h2>Inputs &amp; outputs</h2>
+      <div class="runs">
+    <article class="run-card">
+      <h3>01_greedy</h3>
+      <p class="tag">greedy</p>
+      <div class="io">
+        <div><span class="lbl">Prompt</span><pre>The strangest thing I found inside my refrigerator was</pre></div>
+        <div><span class="lbl">Completion</span><pre>The strangest thing I found inside my refrigerator was a small, white, plastic bag with</pre></div>
+        <div><span class="lbl">Generated suffix</span><pre> a small, white, plastic bag with</pre></div>
+      </div>
+      <ul class="mini-metrics">
+        <li>prefill: 538.9 ms</li>
+        <li>mean decode: 318.9 ms/tok</li>
+        <li>TTFT: 752.4 ms</li>
+        <li>tok/s: 2.59</li>
