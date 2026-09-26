@@ -382,3 +382,48 @@ $$
 
 1. `make verify` or `python tools/verify_hf.py --strict`  
 2. `python cpu/run.py --prompt "..."` — top-k, then greedy  
+3. `--verbose-timing` — tie to slide 8 (no KV cache)
+
+### Speaker notes
+
+**Payoff:** one model, three implementations. Correctness first (logits match), speed second.
+
+**CUDA-Oxide (~60 s, no GPU run):** same `cpu/gpt2.py` ops ported to Rust device kernels; NVIDIA **`cargo oxide`** toolchain; compare to NumPy on a rented Ampere box later. Repo: `cuda-oxide/`, `docs/cuda-oxide-setup.md`.
+
+**CUDA C++:** same story, classic `nvcc` — optional second runtime.
+
+Do not live-run Oxide/C++ without a working GPU pod.
+
+Deep trace for Q&A: GitHub `docs/cpu-inference-walkthrough.md`.  
+Stage script: `docs/demo-narrative.md`.
+
+---
+
+<!-- Everything below: presenter cheat sheet — do NOT import into Gamma as slides -->
+
+## APPENDIX — Assets
+
+Full file → slide mapping: **[`assets/README.md`](../assets/README.md)**.
+
+Quick list: 9 PNGs in `assets/` — slides **1, 4, 7, 9, 10** use images; **2, 3, 5, 6, 11** are text/code/terminal only.
+
+## APPENDIX — Timing (~40 min)
+
+| Block | min |
+|---|---:|
+| Slides 1–3 | 6 |
+| Slide 4 | 6 |
+| Slides 5–8 | 10 |
+| Slides 9–11 | 7 |
+| Live CPU demo | 10–12 |
+| **Total** | **~39–41** |
+
+## APPENDIX — Presenter accuracy checklist
+
+- GPT-2 predicts **tokens** (byte-level BPE), not always whole words.
+- 124M params, 12 layers, $d=768$, 12 heads, $d_h=64$, vocab 50257, context 1024.
+- Final **LayerNorm** before LM head; LM weights **tied** to `wte`.
+- Attention softmax vs vocab softmax: same formula, different role.
+- No guaranteed global optimum for Transformer training; don’t oversell SGD slide footer.
+- Modern model numbers on slide 2 = **scale only**, not quality.
+- GPU table **TBD** on stage is correct and honest.
