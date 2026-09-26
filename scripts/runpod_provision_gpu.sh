@@ -94,3 +94,28 @@ for _ in $(seq 1 60); do
     echo "  status=$STATE (waiting for ssh block...)"
   else
     GQL="$(curl -sf -H "Content-Type: application/json" \
+      --url "https://api.runpod.io/graphql?api_key=${API_KEY}" \
+      --data "{\"query\":\"query { pod(input: {podId: \\\"${POD_ID}\\\"}) { id desiredStatus runtime { ports { ip isIpPublic privatePort publicPort } } } }\"}")"
+    echo "  graphql desiredStatus=$(echo "$GQL" | jq -r '.data.pod.desiredStatus // empty')"
+  fi
+  sleep 10
+done
+
+echo ""
+echo "========== SSH (save this) =========="
+if [[ -n "$SSH_CMD" && "$SSH_CMD" != "null" ]]; then
+  echo "$SSH_CMD"
+  echo ""
+  echo "Proxy fallback (common): ssh ${POD_ID}-<suffix>@ssh.runpod.io  (see RunPod console → Connect → SSH)"
+else
+  echo "Open https://www.runpod.io/console/pods → pod ${POD_ID} → Connect → SSH"
+  echo "Use identity file: $KEY_FILE"
+fi
+echo "====================================="
+echo ""
+echo "After login, on the pod:"
+echo "  git clone <your-repo-url> /workspace/devin-meetup-rio && cd /workspace/devin-meetup-rio"
+echo "  bash scripts/cuda_oxide_host_setup.sh"
+echo ""
+echo "Or from your Mac (once SSH works):"
+echo "  RUNPOD_POD_ID=${POD_ID} bash scripts/runpod_remote_bootstrap.sh"
