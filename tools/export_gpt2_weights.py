@@ -94,3 +94,18 @@ def export(model_dir: Path, out_dir: Path) -> None:
         "tensor_list": tensor_list,
         "tensors": tensors,
     }
+    manifest_path.write_text(json.dumps(manifest, indent=2) + "\n")
+    print(f"Wrote {bin_path} ({offset / 1e6:.1f} MB payload + header)")
+    print(f"Wrote {manifest_path} ({len(tensors)} tensors)")
+
+
+def main() -> None:
+    p = argparse.ArgumentParser()
+    p.add_argument("--model-dir", type=Path, default=ROOT / "models" / "gpt2")
+    p.add_argument("--out-dir", type=Path, default=ROOT / "common" / "weights")
+    args = p.parse_args()
+    export(args.model_dir, args.out_dir)
+
+
+if __name__ == "__main__":
+    main()
